@@ -130,6 +130,9 @@
    <property name="text">
     <string>Load Files</string>
    </property>
+   <property name="shortcut">
+    <string>F5</string>
+   </property>
   </action>
   <action name="actionExit">
    <property name="text">
