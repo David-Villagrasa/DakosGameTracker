@@ -1,10 +1,13 @@
 import sys
 import csv
 import os
+import json
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QFileDialog
 from main import Ui_MainWindow
 from table import Ui_Dialog
+
+CONFIG_FILE = 'config.json'
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
@@ -12,6 +15,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.selected_folder = ""  # attribute to store the selected folder path
         self.files = {}  # dictionary to store the mapping of years to files
+        self.load_config()  # load configuration from JSON file
+
         self.btnOpenYear.clicked.connect(self.open_dialog)
         self.actionExit.triggered.connect(self.close_application)
         self.actionSet_Folder.triggered.connect(self.set_folder)  # connect the Set Folder action
@@ -25,6 +30,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             dialog.exec_()
 
     def close_application(self):
+        self.save_config()  # save configuration before closing
         self.close()
 
     def set_folder(self):
@@ -33,6 +39,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if folder:
             self.selected_folder = folder
             self.update_file_info()
+            self.save_config()  # save configuration after setting the folder
 
     def reload_files(self):
         # reload the files as if pressing F5
@@ -47,6 +54,24 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.files = {f.split(' ')[0]: os.path.join(self.selected_folder, f) for f in files if f.split(' ')[0].isdigit()}
         years = sorted(self.files.keys())
         self.cbYears.addItems(years)  # add years to the combo box
+
+    def load_config(self):
+        # load configuration from JSON file
+        if os.path.exists(CONFIG_FILE):
+            with open(CONFIG_FILE, 'r') as f:
+                config = json.load(f)
+                self.selected_folder = config.get('selected_folder', '')
+                if self.selected_folder:
+                    self.update_file_info()
+
+    def save_config(self):
+        # save configuration to JSON file
+        config = {
+            'selected_folder': self.selected_folder
+        }
+        with open(CONFIG_FILE, 'w') as f:
+            json.dump(config, f)
+
 
 class SecondDialog(QtWidgets.QDialog, Ui_Dialog):
     def __init__(self, parent=None, file_path=""):
