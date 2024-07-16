@@ -11,7 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>DGT</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../resources.qrc">
+    <normaloff>:/icon.png</normaloff>:/icon.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QLabel" name="lbl_mainTitle">
@@ -31,7 +35,7 @@
      </font>
     </property>
     <property name="text">
-     <string>TotallyGames</string>
+     <string>DGT</string>
     </property>
    </widget>
    <widget class="QComboBox" name="cbYears">
@@ -160,6 +164,8 @@
    </property>
   </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
  <connections/>
 </ui>
