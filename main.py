@@ -1,8 +1,9 @@
 import sys
 import json
 import os
+import re 
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtWidgets import QFileDialog, QInputDialog, QMessageBox
 from main_window import Ui_MainWindow
 from table import TableWindow
 
@@ -20,8 +21,19 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.actionExit.triggered.connect(self.close_application)
         self.actionSet_Folder.triggered.connect(self.set_folder)  # connect the Set Folder action
         self.actionLoad_Files.triggered.connect(self.reload_files)  # connect the Load Files action
+        self.actionNew_Year.triggered.connect(self.add_new_year)  # connect the New Year action
+
+        self.check_folder_selected()
+
+    def check_folder_selected(self):
+        if not self.selected_folder:
+            QtWidgets.QMessageBox.warning(self, "No Folder Selected", "Please go to Options > Select Folder to configure the application by selecting a folder.")
 
     def open_dialog(self):
+        if not self.selected_folder:
+            QtWidgets.QMessageBox.warning(self, "No Folder Selected", "Please select a folder first.")
+            return
+
         selected_year = self.cbYears.currentText()
         if selected_year in self.files:
             file_path = self.files[selected_year]
@@ -46,11 +58,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.update_file_info()
 
     def update_file_info(self):
-        # get all .txt files that match the pattern "YYYY juegos jugados"
-        files = [f for f in os.listdir(self.selected_folder) if f.endswith('.txt') and 'juegos jugados' in f]
+        # get all .txt files that match the pattern "YYYYpg.txt"
+        files = [f for f in os.listdir(self.selected_folder) if f.endswith('.txt') and re.match(r'\d{4}pg\.txt$', f)]
         self.lbl_numberOf.setText(str(len(files)))  # update the label with the number of files
         self.cbYears.clear()  # clear existing items in the combo box
-        self.files = {f.split(' ')[0]: os.path.join(self.selected_folder, f) for f in files if f.split(' ')[0].isdigit()}
+        self.files = {f[:4]: os.path.join(self.selected_folder, f) for f in files}  # map years to file paths
         years = sorted(self.files.keys())
         self.cbYears.addItems(years)  # add years to the combo box
 
@@ -65,11 +77,32 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def save_config(self):
         # save configuration to JSON file
-        config = {
-            'selected_folder': self.selected_folder
-        }
+        if os.path.exists(CONFIG_FILE):
+            with open(CONFIG_FILE, 'r') as f:
+                config = json.load(f)
+        else:
+            config = {}
+
+        config['selected_folder'] = self.selected_folder
+
         with open(CONFIG_FILE, 'w') as f:
-            json.dump(config, f)
+            json.dump(config, f, indent=4)
+
+    def add_new_year(self):
+        if not self.selected_folder:
+            QtWidgets.QMessageBox.warning(self, "No Folder Selected", "Please select a folder first.")
+            return
+
+        year, ok = QInputDialog.getText(self, "New Year", "Enter the year:")
+        if ok and year:
+            if re.match(r'^\d{4}$', year) and year not in self.files:
+                new_file_path = os.path.join(self.selected_folder, f"{year}pg.txt")
+                with open(new_file_path, 'w') as f:
+                    f.write("")  # create an empty file
+                self.update_file_info()  # update the file list
+                QMessageBox.information(self, "Success", f"File {year}pg.txt created successfully.")
+            else:
+                QMessageBox.warning(self, "Error", "The year is invalid or already exists.")
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
